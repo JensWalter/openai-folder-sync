@@ -1,0 +1,14 @@
+[package]
+name = "openai-folder-sync"
+version = "0.1.0"
+edition = "2021"
+authors = ["Jens Walter <jens@apimeister.com>"]
+license = "MIT OR Apache-2.0"
+description = "CLI tool for syncing working with EDI files."
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+async-openai = { version = "0.26" }
+clap = { version = "4", features = ["env","derive"] }
+md-5 = "0.10.5"
+indicatif = "0.17"
