@@ -76,6 +76,8 @@ pub async fn upload_file(
 
 pub async fn remove_file(client: &Client<OpenAIConfig>, file_id: &str) {
     let files = client.files();
-    files.delete(file_id).await.unwrap();
-    // println!("{result:?}");
+    let result = files.delete(file_id).await;
+    if let Err(err) = result {
+        eprintln!("error while deleteing file {file_id}: {err:?}");
+    }
 }
