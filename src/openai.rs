@@ -31,7 +31,9 @@ pub async fn get_files_from_vector_store(
     }
     let pb = ProgressBar::new(file_ids.len() as u64);
     for file_id in &file_ids {
-        let file_data = files.retrieve(file_id).await.unwrap();
+        let file_data = files.retrieve(file_id).await.unwrap_or_else(|e| {
+            panic!("error while retrieving file {file_id}: {e:?}");
+        });
         result.push(VectorFile {
             id: file_id.to_string(),
             filename: file_data.filename,
