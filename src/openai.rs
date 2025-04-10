@@ -31,9 +31,21 @@ pub async fn get_files_from_vector_store(
     }
     let pb = ProgressBar::new(file_ids.len() as u64);
     for file_id in &file_ids {
-        let file_data = files.retrieve(file_id).await.unwrap_or_else(|e| {
-            panic!("error while retrieving file {file_id}: {e:?}");
-        });
+        let mut retries = 3;
+        let file_data = loop {
+            match files.retrieve(file_id).await {
+                Ok(data) => {
+                    break data;
+                }
+                Err(e) => {
+                    retries -= 1;
+                    if retries == 0 {
+                        panic!("error while retrieving file {file_id} after 3 attempts: {e:?}");
+                    }
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                }
+            }
+        };
         result.push(VectorFile {
             id: file_id.to_string(),
             filename: file_data.filename,
