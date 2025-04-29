@@ -1,8 +1,8 @@
 use crate::{LocalFile, VectorFile};
 use async_openai::{
+    Client,
     config::OpenAIConfig,
     types::{CreateFileRequest, CreateVectorStoreFileRequest, FileInput, FilePurpose, InputSource},
-    Client,
 };
 use indicatif::ProgressBar;
 use std::path::Path;

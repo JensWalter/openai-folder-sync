@@ -1,4 +1,4 @@
-use async_openai::{config::OpenAIConfig, Client};
+use async_openai::{Client, config::OpenAIConfig};
 use clap::Parser;
 use indicatif::ProgressBar;
 use local::get_files_from_filesystem;

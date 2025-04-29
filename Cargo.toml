@@ -1,7 +1,7 @@
 [package]
 name = "openai-folder-sync"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 authors = ["Jens Walter <jens@apimeister.com>"]
 license = "MIT OR Apache-2.0"
 description = "CLI tool for syncing working with EDI files."
