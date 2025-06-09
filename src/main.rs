@@ -3,8 +3,9 @@ use clap::Parser;
 use indicatif::ProgressBar;
 use local::get_files_from_filesystem;
 use openai::{get_files_from_vector_store, upload_file};
-use std::{path::PathBuf, process::Command};
+use std::path::PathBuf;
 
+mod git;
 mod local;
 mod openai;
 
@@ -111,28 +112,6 @@ async fn main() {
     println!("done.");
 }
 
-fn get_git_info(path: &PathBuf) -> String {
-    let output = Command::new("git")
-        .arg("log")
-        .arg("-1")
-        .arg("--pretty=format:'%an'")
-        .arg("--")
-        .arg(path)
-        .output()
-        .unwrap();
-    let username = String::from_utf8(output.stdout).unwrap().trim().to_string();
-    let output = Command::new("git")
-        .arg("log")
-        .arg("-1")
-        .arg("--pretty=format:'%ai'")
-        .arg("--")
-        .arg(path)
-        .output()
-        .unwrap();
-    let date = String::from_utf8(output.stdout).unwrap().trim().to_string();
-    format!("last commit at {}\nlast commit from {}\n\n", date, username)
-}
-
 #[test]
 fn test_git_info() {
     let local_files = get_files_from_filesystem("./src", vec!["rs"]);
@@ -142,7 +121,7 @@ fn test_git_info() {
         let final_path = std::path::Path::new("./src").join(file.path.clone());
         println!("{}", final_path.display());
         let content = std::fs::read_to_string(&final_path).unwrap();
-        let mut git_info = get_git_info(&final_path);
+        let mut git_info = git::get_git_info(&final_path);
         println!("{} {}", final_path.display(), git_info);
         git_info.push_str(&content);
         println!("{}", git_info);

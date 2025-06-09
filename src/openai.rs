@@ -1,4 +1,4 @@
-use crate::{get_git_info, LocalFile, VectorFile};
+use crate::{LocalFile, VectorFile, git::get_git_info};
 use async_openai::{
     Client,
     config::OpenAIConfig,
@@ -41,7 +41,7 @@ pub async fn get_files_from_vector_store(
                     retries -= 1;
                     if retries == 0 {
                         eprintln!("error while retrieving file {file_id} after 3 attempts: {e:?}");
-                        continue
+                        continue;
                     }
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                 }
@@ -71,7 +71,7 @@ pub async fn upload_file(
         let content = std::fs::read_to_string(full_path).unwrap();
         git_info.push_str(&content);
         git_info.as_bytes().to_vec()
-    }else{
+    } else {
         std::fs::read(full_path).unwrap()
     };
     let files = client.files();
