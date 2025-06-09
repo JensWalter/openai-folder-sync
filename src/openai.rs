@@ -40,9 +40,10 @@ pub async fn get_files_from_vector_store(
                 Err(e) => {
                     retries -= 1;
                     if retries == 0 {
-                        panic!("error while retrieving file {file_id} after 3 attempts: {e:?}");
+                        eprintln!("error while retrieving file {file_id} after 3 attempts: {e:?}");
+                        continue
                     }
-                    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                 }
             }
         };
