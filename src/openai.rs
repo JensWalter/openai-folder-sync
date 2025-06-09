@@ -35,22 +35,24 @@ pub async fn get_files_from_vector_store(
         let file_data = loop {
             match files.retrieve(file_id).await {
                 Ok(data) => {
-                    break data;
+                    break Some(data);
                 }
                 Err(e) => {
                     retries -= 1;
                     if retries == 0 {
                         eprintln!("error while retrieving file {file_id} after 3 attempts: {e:?}");
-                        panic!("error while retrieving file {file_id} after 3 attempts: {e:?}");
+                        break None;
                     }
                     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                 }
             }
         };
-        result.push(VectorFile {
-            id: file_id.to_string(),
-            filename: file_data.filename,
-        });
+        if let Some(file_data) = file_data {
+            result.push(VectorFile {
+                id: file_id.to_string(),
+                filename: file_data.filename,
+            });
+        }
         pb.inc(1);
     }
     pb.finish_with_message("done");
