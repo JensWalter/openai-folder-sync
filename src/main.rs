@@ -3,7 +3,7 @@ use clap::Parser;
 use indicatif::ProgressBar;
 use local::get_files_from_filesystem;
 use openai::{get_files_from_vector_store, upload_file};
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
 mod local;
 mod openai;
@@ -33,8 +33,21 @@ struct Args {
     #[arg(short, long, env)]
     local_dir: String,
 
-    #[arg(short, long, env)]
+    #[arg(
+        short,
+        long,
+        env,
+        help = "comma separated list of file extensions to sync"
+    )]
     extensions: Option<String>,
+
+    #[arg(
+        short,
+        long,
+        env,
+        help = "embed git info from git cli into the file content, if filetype is markdown"
+    )]
+    git_info: Option<bool>,
 }
 
 #[tokio::main]
@@ -67,7 +80,14 @@ async fn main() {
             }
         }
         if !found {
-            upload_file(&client, &args.vector_store, &args.local_dir, file).await;
+            upload_file(
+                &client,
+                &args.vector_store,
+                &args.local_dir,
+                file,
+                args.git_info.unwrap_or(false),
+            )
+            .await;
         }
     }
     pb.finish_with_message("done");
@@ -89,4 +109,42 @@ async fn main() {
     }
     pb.finish_with_message("done");
     println!("done.");
+}
+
+fn get_git_info(path: &PathBuf) -> String {
+    let output = Command::new("git")
+        .arg("log")
+        .arg("-1")
+        .arg("--pretty=format:'%an'")
+        .arg("--")
+        .arg(path)
+        .output()
+        .unwrap();
+    let username = String::from_utf8(output.stdout).unwrap().trim().to_string();
+    let output = Command::new("git")
+        .arg("log")
+        .arg("-1")
+        .arg("--pretty=format:'%ai'")
+        .arg("--")
+        .arg(path)
+        .output()
+        .unwrap();
+    let date = String::from_utf8(output.stdout).unwrap().trim().to_string();
+    format!("last commit at {}\nlast commit from {}\n\n", date, username)
+}
+
+#[test]
+fn test_git_info() {
+    let local_files = get_files_from_filesystem("./src", vec!["rs"]);
+    println!("got {} files from filesystem", local_files.len());
+    assert_eq!(local_files.len(), 3);
+    for file in &local_files {
+        let final_path = std::path::Path::new("./src").join(file.path.clone());
+        println!("{}", final_path.display());
+        let content = std::fs::read_to_string(&final_path).unwrap();
+        let mut git_info = get_git_info(&final_path);
+        println!("{} {}", final_path.display(), git_info);
+        git_info.push_str(&content);
+        println!("{}", git_info);
+    }
 }

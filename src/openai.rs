@@ -1,4 +1,4 @@
-use crate::{LocalFile, VectorFile};
+use crate::{get_git_info, LocalFile, VectorFile};
 use async_openai::{
     Client,
     config::OpenAIConfig,
@@ -24,7 +24,7 @@ pub async fn get_files_from_vector_store(
             .await
             .unwrap();
         has_more = files_list.has_more;
-        last_id = files_list.last_id;
+        last_id = files_list.last_id.unwrap_or_default();
         for file in files_list.data {
             file_ids.push(file.id);
         }
@@ -61,9 +61,18 @@ pub async fn upload_file(
     vector_store: &str,
     local_dir: &str,
     ft: &LocalFile,
+    embed_git_info: bool,
 ) {
     let full_path = Path::new(local_dir).join(ft.path.clone());
-    let data: Vec<u8> = std::fs::read(full_path).unwrap();
+    // embed git metadata into markdown files
+    let data: Vec<u8> = if embed_git_info && ft.path.extension().unwrap_or_default() == "md" {
+        let mut git_info = get_git_info(&full_path);
+        let content = std::fs::read_to_string(full_path).unwrap();
+        git_info.push_str(&content);
+        git_info.as_bytes().to_vec()
+    }else{
+        std::fs::read(full_path).unwrap()
+    };
     let files = client.files();
     let vector_stores = client.vector_stores();
     let result = files
@@ -83,6 +92,7 @@ pub async fn upload_file(
     x.create(CreateVectorStoreFileRequest {
         file_id: result.id,
         chunking_strategy: None,
+        attributes: None,
     })
     .await
     .unwrap();
