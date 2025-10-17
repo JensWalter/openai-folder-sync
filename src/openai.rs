@@ -80,6 +80,7 @@ pub async fn upload_file(
     let vector_stores = client.vector_stores();
     let result = files
         .create(CreateFileRequest {
+            expires_after: None,
             file: FileInput {
                 source: InputSource::VecU8 {
                     filename: ft.openai_filename.to_string(),
