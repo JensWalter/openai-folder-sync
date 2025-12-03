@@ -2,7 +2,12 @@ use crate::{LocalFile, VectorFile, git::get_git_info};
 use async_openai::{
     Client,
     config::OpenAIConfig,
-    types::{CreateFileRequest, CreateVectorStoreFileRequest, FileInput, FilePurpose, InputSource},
+    traits::RequestOptionsBuilder,
+    types::{
+        InputSource,
+        files::{CreateFileRequest, FileInput, FilePurpose},
+        vectorstores::{CreateVectorStoreFileRequest, ListVectorStoreFilesQuery},
+    },
 };
 use indicatif::ProgressBar;
 use std::path::Path;
@@ -13,16 +18,22 @@ pub async fn get_files_from_vector_store(
 ) -> Result<Vec<VectorFile>, String> {
     let stores = client.vector_stores();
     let files = client.files();
-    let store_files = stores.files(store);
     let mut has_more = true;
     let mut result = vec![];
     let mut last_id = "".to_string();
     let mut file_ids = vec![];
     while has_more {
-        let files_list = store_files
-            .list(&[("limit", "100"), ("after", &last_id)])
-            .await
+        let store_files = stores.files(store);
+        let store_files = store_files
+            .query(&ListVectorStoreFilesQuery {
+                limit: Some(100),
+                after: Some(last_id),
+                before: None,
+                filter: None,
+                order: None,
+            })
             .unwrap();
+        let files_list = store_files.list().await.unwrap();
         has_more = files_list.has_more;
         last_id = files_list.last_id.unwrap_or_default();
         for file in files_list.data {
