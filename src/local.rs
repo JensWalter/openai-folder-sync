@@ -21,7 +21,10 @@ fn hash_files(base_dir: &Path, files: Vec<&PathBuf>) -> Result<Vec<crate::LocalF
         let mut hasher = Md5::new();
         hasher.update(&buffer);
         let result = hasher.finalize();
-        let md5_string = format!("{:x}", result);
+        let md5_string = result
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
 
         hashed_files.push(crate::LocalFile {
             openai_filename: generate_filename(file_path, &md5_string),
